@@ -10,23 +10,32 @@ import android.view.WindowManager;
 import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.graphics.Color;
-
 import com.example.guessmynumber.databinding.ActivityDiGiocoBinding;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Random;
 
 public class ActivityDiGioco extends AppCompatActivity {
     public static int stato = 0;
     private int contatore = 0;
 
+    private int massimoInserimento = 0;
+    private int numeroMassimoGenerabile = 0;
+
     private Chronometer chronometer;
     private long tempoImpiegato;
     /*
      * Vettore di 12 pulsanti
      *      10 pulsanti per i numeri
+     *      2 pulsanti per cancellare i valori inseriti
      *      1 pulsante per confermare il numero inserito
      *      1 pulsante per tornare al menù principale
      */
-    private ImageButton[] vettorePulsanti = new ImageButton[12];
+    private ImageButton[] vettorePulsanti = new ImageButton[14];
     /*
      * Questa variabile è necessaria per collegare la classe Java al componente testo in cui compare
      * il numero digitato
@@ -58,22 +67,28 @@ public class ActivityDiGioco extends AppCompatActivity {
 
         /*
          * Cambio canzone sottofondo
+         *      Generazione del numero in base alla difficoltà
+         *      Impostazione del massimo numero di caratteri inseribili
          */
         if(stato == 0){
             MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.vasco_rossi_un_senso);
+            massimoInserimento = 2;
         }else if (stato == 1){
             MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.platform_nine_ncs);
+            massimoInserimento = 3;
         }else{
             MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.gameplay_music_final);
+            massimoInserimento = 4;
         }
+
+        numeroMassimoGenerabile = (int) Math.pow(10, massimoInserimento);
+        numeroGeneratoCasualmente = randomGenerator.nextInt(numeroMassimoGenerabile);
+
         MainActivity.mp.setLooping(true);
         MainActivity.mp.start();
 
         b = ActivityDiGiocoBinding.inflate(getLayoutInflater());
         setContentView(b.getRoot());
-
-        //Assegnazione del numero generato casualmente nella creazione della pagina
-        numeroGeneratoCasualmente = randomGenerator.nextInt(10000);
 
         vettorePulsanti[0] = (ImageButton) findViewById(R.id.pulsante1);
         vettorePulsanti[0].setOnClickListener(new View.OnClickListener() {
@@ -156,16 +171,36 @@ public class ActivityDiGioco extends AppCompatActivity {
             }
         });
 
-        vettorePulsanti[10] = (ImageButton) findViewById(R.id.imageButton21);
+        vettorePulsanti[10] = (ImageButton) findViewById(R.id.pulsanteCancella);
         vettorePulsanti[10].setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                try {//Try catch per far sì che almeno 1 numero debba essere stato inserito
+                    numeriInseriti = numeriInseriti.substring(0, numeriInseriti.length() - 1);
+                }catch (StringIndexOutOfBoundsException e){}
+                b.campoPerLascritta.setText(numeriInseriti);
+            }
+        });
+
+        vettorePulsanti[11] = (ImageButton) findViewById(R.id.tastoCancellaTutto);
+        vettorePulsanti[11].setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                numeriInseriti = "";
+                b.campoPerLascritta.setText("");
+            }
+        });
+
+        vettorePulsanti[12] = (ImageButton) findViewById(R.id.imageButton21);
+        vettorePulsanti[12].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 confermaNumeroInserito();
             }
         });
 
-        vettorePulsanti[11] = (ImageButton) findViewById(R.id.imageButton6);
-        vettorePulsanti[11].setOnClickListener(new View.OnClickListener() {
+        vettorePulsanti[13] = (ImageButton) findViewById(R.id.imageButton6);
+        vettorePulsanti[13].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 ritornoAllaFinestraPrincipale();
@@ -174,14 +209,20 @@ public class ActivityDiGioco extends AppCompatActivity {
     }//Chiusura metodo onCreate
 
     private void inserimentoNumero(String scelta){
-        if(numeriInseriti.length() < 4) {//Limite di cifre inseribili nel numero
+        if(numeriInseriti.length() <= massimoInserimento) {//Limite di cifre inseribili nel numero
             numeriInseriti += scelta;
 
             b.campoPerLascritta.setTextSize(80);
             b.campoPerLascritta.setTextColor(Color.rgb(255,87,34));
             b.campoPerLascritta.setText(numeriInseriti);
-            System.out.println("lol: " + chronometer.getBase());
         }
+        //Controllo che non sia inserito un numero più grande di quello inseribile
+        try{
+            if(Integer.valueOf(numeriInseriti) > numeroMassimoGenerabile) {
+                numeriInseriti = String.valueOf(Math.pow(10, massimoInserimento)).substring(0, numeriInseriti.length());
+                b.campoPerLascritta.setText(numeriInseriti);
+            }
+        }catch (NumberFormatException e){ }//Eccezione nel caso il numero sia vuoto
     }
 
     private void confermaNumeroInserito(){
@@ -214,16 +255,62 @@ public class ActivityDiGioco extends AppCompatActivity {
                  */
                 chronometer.stop();
                 tempoImpiegato = chronometer.getBase();
-                b.campoPerLascritta.setTextSize(40);
-                b.campoPerLascritta.setTextColor(Color.GREEN);
-                b.campoPerLascritta.setText("VITTORIA");
-                b.imageButton21.setVisibility(View.INVISIBLE);
                 MainActivity.mp.stop();
                 MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.we_are_the_champions);
                 MainActivity.mp.start();
                 MainActivity.mp.setLooping(false);
+
+                FileInputStream streamObject = null;
+                //Controllo per capire se andare nella finestra record o no
+                String testo = "";
+                try {
+                    streamObject = openFileInput(MainActivity.NOME_DEL_FILE);
+                    InputStreamReader inputObject = new InputStreamReader(streamObject);
+                    BufferedReader br = new BufferedReader(inputObject);
+                    StringBuilder sb = new StringBuilder();
+
+                    while((testo = br.readLine()) != null){
+                        sb.append(testo).append("\n");
+                    }
+
+                    if(sb.length() == 0) {//Se non è stato ancora mai fatto un record
+                        FileOutputStream so = null;
+                        so = openFileOutput(MainActivity.NOME_DEL_FILE, MODE_PRIVATE);
+                        for(int i = 0; i < 5; i++) so.write("a-\n".getBytes());
+                        for(int i = 0; i < 5; i++) so.write("b-\n".getBytes());
+                        for(int i = 0; i < 5; i++) so.write("c-\n".getBytes());
+
+                        if(so != null){
+                            try {
+                                so.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }//Chiusura del try catch interno
+                        }
+                    }//Chiusura if
+                    testo = sb.toString();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }finally {
+                    if(streamObject != null){
+                        try {
+                            streamObject.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                System.out.println("ABCDE" + testo);
+                for(int i = 0; i < 5; i++){
+
+                }
+
+                b.campoPerLascritta.setTextSize(40);
+                b.campoPerLascritta.setTextColor(Color.GREEN);
+                b.campoPerLascritta.setText("VITTORIA");
+                b.imageButton21.setVisibility(View.INVISIBLE);//Scambio dei pulsanti con "Indovina" con "Menù"
                 for(int i = 0; i < vettorePulsanti.length-1; i++)
-                    vettorePulsanti[i].setVisibility(View.INVISIBLE);
+                    vettorePulsanti[i].setVisibility(View.INVISIBLE);//Rimozione dei tutti i tasti
                 b.imageView7.setVisibility(View.VISIBLE);
             }
         }

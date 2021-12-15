@@ -9,7 +9,9 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 
 public class MainActivity extends AppCompatActivity {
-    private ImageButton[] vettorePulsanti = new ImageButton[4];
+    public static final String NOME_DEL_FILE = "record.txt";
+
+    private final ImageButton[] vettorePulsanti = new ImageButton[4];
     public static MediaPlayer mp;
 
     @Override
@@ -69,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openActivityScore(){
-        Intent i = new Intent( this, ActivityPodio.class);
+        Intent i = new Intent( this, ActivityRecord.class);
         startActivity(i);
     }
 }
