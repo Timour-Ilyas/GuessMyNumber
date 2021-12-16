@@ -26,7 +26,7 @@ public class ActivityDiGioco extends AppCompatActivity {
     private int massimoInserimento = 0;
     private int numeroMassimoGenerabile = 0;
 
-    private Chronometer chronometer;
+    private Chronometer cronometro;
     private long tempoImpiegato;
     /*
      * Vettore di 12 pulsanti
@@ -63,7 +63,10 @@ public class ActivityDiGioco extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_di_gioco);
 
-        inizioTempo();
+        cronometro = (Chronometer) this.findViewById(R.id.chronometer);
+        //chronometer.setFormat("Tempo: %s");
+        //chronometer.setBase(SystemClock.elapsedRealtime());
+        cronometro.start();
 
         /*
          * Cambio canzone sottofondo
@@ -253,8 +256,8 @@ public class ActivityDiGioco extends AppCompatActivity {
                  * Attivazione finestrella di vittoria
                  * Se è un record attivazione finestrella di record
                  */
-                chronometer.stop();
-                tempoImpiegato = chronometer.getBase();
+                cronometro.stop();
+                tempoImpiegato = cronometro.getBase();
                 MainActivity.mp.stop();
                 MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.we_are_the_champions);
                 MainActivity.mp.start();
@@ -319,12 +322,5 @@ public class ActivityDiGioco extends AppCompatActivity {
     private void ritornoAllaFinestraPrincipale(){
         Intent i = new Intent(this, MainActivity.class);
         startActivity(i);
-    }
-
-    private void inizioTempo(){
-        chronometer = findViewById(R.id.chronometer);
-        chronometer.setFormat("Tempo: %s");
-        chronometer.setBase(SystemClock.elapsedRealtime());
-        chronometer.start();
     }
 }
