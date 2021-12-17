@@ -21,6 +21,7 @@ import java.util.TimerTask;
 public class ActivityDiGioco extends AppCompatActivity {
     public static int stato = 1;
     public static int contatore;
+    public static double tempoImpiegato = 0.0;
 
     private int massimoInserimento = 0;
     private int numeroMassimoGenerabile = 0;
@@ -28,7 +29,6 @@ public class ActivityDiGioco extends AppCompatActivity {
     //private TextView timerText;
     private Timer timer;
     private TimerTask timerTask;
-    public double tempoImpiegato = 0.0;
 
     /*
      * Vettore di 12 pulsanti
@@ -285,15 +285,10 @@ public class ActivityDiGioco extends AppCompatActivity {
                     InputStreamReader isr = new InputStreamReader(fis);
                     BufferedReader br = new BufferedReader(isr);
 
-                    FileOutputStream foos = openFileOutput(MainActivity.NOME_DEL_FILE, MODE_PRIVATE);
-                    foos.write("".getBytes());
-                    foos.close();
-
                     while ((text = br.readLine()) != null)
                         contenutoFile = contenutoFile + text + "\n";
-                    System.out.println("aef:" + contenutoFile);
+
                     if(contenutoFile.equals("")){
-                        System.out.println("Nessun record registrato");
                         record = true;
                         FileOutputStream fos = openFileOutput(MainActivity.NOME_DEL_FILE, MODE_PRIVATE);
                         String templateTabella = "";
@@ -314,8 +309,8 @@ public class ActivityDiGioco extends AppCompatActivity {
                     }
                 }
 
-                //if(!record)//Se nel file c'era già qualche record, si comparano con il nuovo valore
-                    //record = controlloRecord(contenutoFile.toString());
+                if(!record)//Se nel file c'era già qualche record, si comparano con il nuovo valore
+                    record = controlloRecord(contenutoFile.toString());
 
                 if(record){//Se è record viene chiamata la finestra di record
                     Intent i = new Intent(this, ActivityRecord.class);
@@ -363,9 +358,12 @@ public class ActivityDiGioco extends AppCompatActivity {
             if(contenutoFile.charAt(i) == ('-'))
                 contatoreDiTrattini++;
         }
-
-        if(tempoImpiegato < Integer.parseInt(tempoTerzaPosizione.toString()))
+        try {
+            if (tempoImpiegato < Integer.parseInt(tempoTerzaPosizione.toString()))
+                return true;
+            else return false;
+        }catch (NumberFormatException e){
             return true;
-        else return false;
+        }
     }
 }
