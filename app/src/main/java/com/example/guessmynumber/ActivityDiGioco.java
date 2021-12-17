@@ -3,31 +3,33 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Chronometer;
 import android.widget.ImageButton;
 import android.graphics.Color;
 import com.example.guessmynumber.databinding.ActivityDiGiocoBinding;
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class ActivityDiGioco extends AppCompatActivity {
-    public static int stato = 0;
-    private int contatore = 0;
+    public static int stato = 1;
+    public static int contatore;
 
     private int massimoInserimento = 0;
     private int numeroMassimoGenerabile = 0;
 
-    private Chronometer cronometro;
-    private long tempoImpiegato;
+    //private TextView timerText;
+    private Timer timer;
+    private TimerTask timerTask;
+    public double tempoImpiegato = 0.0;
+
     /*
      * Vettore di 12 pulsanti
      *      10 pulsanti per i numeri
@@ -35,7 +37,7 @@ public class ActivityDiGioco extends AppCompatActivity {
      *      1 pulsante per confermare il numero inserito
      *      1 pulsante per tornare al menù principale
      */
-    private ImageButton[] vettorePulsanti = new ImageButton[14];
+    private final ImageButton[] vettorePulsanti = new ImageButton[14];
     /*
      * Questa variabile è necessaria per collegare la classe Java al componente testo in cui compare
      * il numero digitato
@@ -48,9 +50,11 @@ public class ActivityDiGioco extends AppCompatActivity {
      */
     private String numeriInseriti = "";
     //Generatore casuale di numeri
-    private Random randomGenerator = new Random();
+    private final Random randomGenerator = new Random();
     //Variabile che prende il contenuto del numero generato casualmente
     private int numeroGeneratoCasualmente;
+
+    private boolean record = false;
 
     public static void guardaScelta(int scelta){
         stato = scelta;
@@ -63,35 +67,44 @@ public class ActivityDiGioco extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_di_gioco);
 
-        cronometro = (Chronometer) this.findViewById(R.id.chronometer);
-        //chronometer.setFormat("Tempo: %s");
-        //chronometer.setBase(SystemClock.elapsedRealtime());
-        cronometro.start();
+        b = ActivityDiGiocoBinding.inflate(getLayoutInflater());
+        setContentView(b.getRoot());
+
+        //timerText = (TextView) findViewById(R.id.cronometroLabel);
+        timer = new Timer();
+        timerTask = new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        tempoImpiegato++;
+                        b.cronometroLabel.setText("Tempo: " + presaDiTempo());
+                        //timerText.setText("Tempo: " + presaDiTempo()); <-- Questo è un caso in cui il setText non funziona
+                    }
+                });
+            }
+        };
+        timer.scheduleAtFixedRate(timerTask, 0,1000);
 
         /*
          * Cambio canzone sottofondo
          *      Generazione del numero in base alla difficoltà
          *      Impostazione del massimo numero di caratteri inseribili
          */
-        if(stato == 0){
+        if(stato == 1)
             MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.vasco_rossi_un_senso);
-            massimoInserimento = 2;
-        }else if (stato == 1){
+        else if (stato == 2)
             MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.platform_nine_ncs);
-            massimoInserimento = 3;
-        }else{
+        else
             MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.gameplay_music_final);
-            massimoInserimento = 4;
-        }
+        massimoInserimento = stato+1;
 
         numeroMassimoGenerabile = (int) Math.pow(10, massimoInserimento);
         numeroGeneratoCasualmente = randomGenerator.nextInt(numeroMassimoGenerabile);
 
         MainActivity.mp.setLooping(true);
         MainActivity.mp.start();
-
-        b = ActivityDiGiocoBinding.inflate(getLayoutInflater());
-        setContentView(b.getRoot());
 
         vettorePulsanti[0] = (ImageButton) findViewById(R.id.pulsante1);
         vettorePulsanti[0].setOnClickListener(new View.OnClickListener() {
@@ -209,6 +222,7 @@ public class ActivityDiGioco extends AppCompatActivity {
                 ritornoAllaFinestraPrincipale();
             }
         });
+        contatore = 0;//Serve per far sì che in più partite il valore si azzeri
     }//Chiusura metodo onCreate
 
     private void inserimentoNumero(String scelta){
@@ -256,65 +270,65 @@ public class ActivityDiGioco extends AppCompatActivity {
                  * Attivazione finestrella di vittoria
                  * Se è un record attivazione finestrella di record
                  */
-                cronometro.stop();
-                tempoImpiegato = cronometro.getBase();
+                timerTask.cancel();
                 MainActivity.mp.stop();
                 MainActivity.mp = MediaPlayer.create(ActivityDiGioco.this,R.raw.we_are_the_champions);
                 MainActivity.mp.start();
                 MainActivity.mp.setLooping(false);
 
-                FileInputStream streamObject = null;
                 //Controllo per capire se andare nella finestra record o no
-                String testo = "";
+                FileInputStream fis = null;
+                String text;
+                String contenutoFile = "";
                 try {
-                    streamObject = openFileInput(MainActivity.NOME_DEL_FILE);
-                    InputStreamReader inputObject = new InputStreamReader(streamObject);
-                    BufferedReader br = new BufferedReader(inputObject);
-                    StringBuilder sb = new StringBuilder();
+                    fis = openFileInput(MainActivity.NOME_DEL_FILE);
+                    InputStreamReader isr = new InputStreamReader(fis);
+                    BufferedReader br = new BufferedReader(isr);
 
-                    while((testo = br.readLine()) != null){
-                        sb.append(testo).append("\n");
+                    FileOutputStream foos = openFileOutput(MainActivity.NOME_DEL_FILE, MODE_PRIVATE);
+                    foos.write("".getBytes());
+                    foos.close();
+
+                    while ((text = br.readLine()) != null)
+                        contenutoFile = contenutoFile + text + "\n";
+                    System.out.println("aef:" + contenutoFile);
+                    if(contenutoFile.equals("")){
+                        System.out.println("Nessun record registrato");
+                        record = true;
+                        FileOutputStream fos = openFileOutput(MainActivity.NOME_DEL_FILE, MODE_PRIVATE);
+                        String templateTabella = "";
+                        for(int i = 0; i < 8; i++)
+                            templateTabella = templateTabella + "--\n";
+                        fos.write(templateTabella.getBytes());
+                        fos.close();
                     }
-
-                    if(sb.length() == 0) {//Se non è stato ancora mai fatto un record
-                        FileOutputStream so = null;
-                        so = openFileOutput(MainActivity.NOME_DEL_FILE, MODE_PRIVATE);
-                        for(int i = 0; i < 5; i++) so.write("a-\n".getBytes());
-                        for(int i = 0; i < 5; i++) so.write("b-\n".getBytes());
-                        for(int i = 0; i < 5; i++) so.write("c-\n".getBytes());
-
-                        if(so != null){
-                            try {
-                                so.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }//Chiusura del try catch interno
-                        }
-                    }//Chiusura if
-                    testo = sb.toString();
-                } catch (IOException e) {
-                    e.printStackTrace();
+                }catch (IOException ee){
+                    ee.printStackTrace();
                 }finally {
-                    if(streamObject != null){
+                    if(fis != null){
                         try {
-                            streamObject.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                            fis.close();
+                        }catch(IOException eee){
+                            eee.printStackTrace();
                         }
                     }
                 }
-                System.out.println("ABCDE" + testo);
-                for(int i = 0; i < 5; i++){
 
+                //if(!record)//Se nel file c'era già qualche record, si comparano con il nuovo valore
+                    //record = controlloRecord(contenutoFile.toString());
+
+                if(record){//Se è record viene chiamata la finestra di record
+                    Intent i = new Intent(this, ActivityRecord.class);
+                    startActivity(i);
+                }else {//Se non è record viene mostrato l'immagine di un trofeo con la scritta "VITTORIA"
+                    b.campoPerLascritta.setTextSize(40);
+                    b.campoPerLascritta.setTextColor(Color.GREEN);
+                    b.campoPerLascritta.setText(R.string.vittoria);
+                    b.imageButton21.setVisibility(View.INVISIBLE);//Scambio dei pulsanti con "Indovina" con "Menù"
+                    for (int i = 0; i < vettorePulsanti.length - 1; i++)
+                        vettorePulsanti[i].setVisibility(View.INVISIBLE);//Rimozione dei tutti i tasti
+                    b.imageView7.setVisibility(View.VISIBLE);
                 }
-
-                b.campoPerLascritta.setTextSize(40);
-                b.campoPerLascritta.setTextColor(Color.GREEN);
-                b.campoPerLascritta.setText("VITTORIA");
-                b.imageButton21.setVisibility(View.INVISIBLE);//Scambio dei pulsanti con "Indovina" con "Menù"
-                for(int i = 0; i < vettorePulsanti.length-1; i++)
-                    vettorePulsanti[i].setVisibility(View.INVISIBLE);//Rimozione dei tutti i tasti
-                b.imageView7.setVisibility(View.VISIBLE);
             }
         }
     }//Chiusura del metodo di conferma numero
@@ -322,5 +336,36 @@ public class ActivityDiGioco extends AppCompatActivity {
     private void ritornoAllaFinestraPrincipale(){
         Intent i = new Intent(this, MainActivity.class);
         startActivity(i);
+    }
+
+    private String presaDiTempo(){
+        int rounded = (int) Math.round(tempoImpiegato);
+
+        int secondi = ((rounded % 86400) % 3600) % 60;
+        int minuti = ((rounded % 86400) % 3600) / 60;
+
+        return String.format("%02d", minuti) + ":" + String.format("%02d", secondi);
+    }
+
+    private boolean controlloRecord(String contenutoFile){
+        //Viene deciso quale parte della stringa viene estratta
+        int valoreInTerzaPosizione = (6 * stato) - 1;
+        StringBuilder tempoTerzaPosizione = new StringBuilder();
+
+        for(int i = 0; i < contenutoFile.length(); i++){
+            int contatoreDiTrattini = 0;
+
+            //Quando viene trovata la corretta posizione, si scorre per prendere tutta la stringa
+            if(contatoreDiTrattini == valoreInTerzaPosizione && contenutoFile.charAt(i) != '-')//Il valore '-' viene escluso
+                tempoTerzaPosizione.append(contenutoFile.charAt(i));
+
+            //Quando si trova il valore '-' va contato per trovare quello che in particolare serve a noi
+            if(contenutoFile.charAt(i) == ('-'))
+                contatoreDiTrattini++;
+        }
+
+        if(tempoImpiegato < Integer.parseInt(tempoTerzaPosizione.toString()))
+            return true;
+        else return false;
     }
 }

@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
         vettorePulsanti[0].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openActivityDiGioco(0);
+                openActivityDiGioco(1);
             }
         });
 
@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
         vettorePulsanti[1].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openActivityDiGioco(1);
+                openActivityDiGioco(2);
             }
         });
 
@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         vettorePulsanti[2].setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openActivityDiGioco(2);
+                openActivityDiGioco(3);
             }
         });
 

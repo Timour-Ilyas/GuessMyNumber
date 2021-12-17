@@ -45,11 +45,17 @@
 
     <TextView
         android:id="@+id/textView3"
-        android:layout_width="383dp"
-        android:layout_height="86dp"
-        android:layout_marginTop="20dp"
+        android:layout_width="361dp"
+        android:layout_height="97dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="5dp"
+        android:fontFamily="sans-serif-black"
+        android:gravity="center|center_vertical"
+        android:textColor="#3FFF38"
+        android:textSize="32sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView2" />
 

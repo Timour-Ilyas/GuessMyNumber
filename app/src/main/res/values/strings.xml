@@ -2,4 +2,5 @@
     <string name="app_name">GuessMyNumber</string>
     <string name="textview">Numero di tentativi: 0</string>
     <string name="tempo_0_secondi">Tempo: 0 secondi</string>
+    <string name="vittoria">VITTORIA</string>
 </resources>
