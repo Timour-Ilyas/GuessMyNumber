@@ -21,7 +21,7 @@ import java.util.TimerTask;
 public class ActivityDiGioco extends AppCompatActivity {
     public static int stato = 1;
     public static int contatore;
-    public static double tempoImpiegato = 0.0;
+    public static double tempoImpiegato;
 
     private int massimoInserimento = 0;
     private int numeroMassimoGenerabile = 0;
@@ -72,6 +72,7 @@ public class ActivityDiGioco extends AppCompatActivity {
 
         //timerText = (TextView) findViewById(R.id.cronometroLabel);
         timer = new Timer();
+        tempoImpiegato = 0;
         timerTask = new TimerTask() {
             @Override
             public void run() {
@@ -309,9 +310,12 @@ public class ActivityDiGioco extends AppCompatActivity {
                     }
                 }
 
+                System.out.println("Tabella di gioco: \n" + contenutoFile);
                 if(!record)//Se nel file c'era già qualche record, si comparano con il nuovo valore
                     record = controlloRecord(contenutoFile.toString());
 
+                if(stato == 2)
+                    record = false;
                 if(record){//Se è record viene chiamata la finestra di record
                     Intent i = new Intent(this, ActivityRecord.class);
                     startActivity(i);

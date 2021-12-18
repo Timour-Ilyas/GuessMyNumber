@@ -108,7 +108,7 @@ public class ActivityRecord extends AppCompatActivity {
                          *      2: Numero tentativi
                          *      3: Tempo
                          */
-                        System.out.println("Tabella1:\n" + stampaTabella());
+                        System.out.println("Tabella1:\n" + contenutoFile);
                         if(String.valueOf(estraiValore(2,2))== "" || ActivityDiGioco.contatore < Integer.parseInt(estraiValore(2,2))){
                             if(String.valueOf(estraiValore(1,2))== "" || ActivityDiGioco.contatore < Integer.parseInt(estraiValore(1,2))){
                                 //Prima posizione
@@ -139,7 +139,7 @@ public class ActivityRecord extends AppCompatActivity {
                         }
                     }
 
-                    System.out.println("Tabella2:\n" + stampaTabella());
+                    System.out.println("Tabella2:\n" + contenutoFile);
                     openActivityScore();
                 }else Toast.makeText(ActivityRecord.this, "Inserisci un nome", Toast.LENGTH_SHORT).show();
             }

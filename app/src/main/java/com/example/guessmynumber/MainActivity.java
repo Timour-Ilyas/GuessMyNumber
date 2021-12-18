@@ -71,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void openActivityScore(){
-        Intent i = new Intent( this, ActivityRecord.class);
+        Intent i = new Intent( this, ActivityPodio.class);
         startActivity(i);
     }
 }
